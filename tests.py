@@ -59,6 +59,18 @@ class TestDealerDealCards(unittest.TestCase):
         self.assertListEqual(dc, [Card(10, "Spade"), Card(7, "Heart")])
 
 
+class TestPlayerCheckCards(unittest.TestCase):
+    '''Verify that a player'''
+
+    def setUp(self):
+        self.card_set = [Card(7, "Diamond"), Card(7, "Clubs")]
+        self.player = Player()
+
+    def test_player_cards_double_down(self):
+        with patch("builtins.input", return_value="Y"):
+            self.hand_status = self.player.check_cards(self.card_set)
+
+
 
 
 if __name__ == "__main__":

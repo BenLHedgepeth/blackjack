@@ -1,5 +1,5 @@
 
-from classes import Dealer, Player
+from classes import Dealer, Player, Hand
 
 class BlackjackTable:
 
@@ -10,9 +10,19 @@ class BlackjackTable:
 def main():
     blackjack_table = BlackjackTable()
     player = Player()
-    
-    player_cards, dealer_cards = blackjack_table.dealer.deal(self.cards, player)
-    if len(player_cards) == 4:
-        card_set1, card_set2 = player_cards[0:2:2], player_cards[1:3:2]
-    else:
-        card_set1 = player_cards
+
+    player_cards, dealer_cards = blackjack_table.dealer.deal(self.cards)
+    if player_cards[0] == player_cards[1]:
+        while True:
+            try:
+                double_down = input("Would you like to double_down? ").upper()
+            except:
+                pass
+                continue
+            else:
+                if double_down == "Y":
+                    player_cards = blackjack_table.dealer.deal(
+                        self.cards, player_cards, True
+                    )
+                    break
+                
