@@ -31,7 +31,7 @@ class TestPlayer(unittest.TestCase):
         with patch("builtins.input", return_value="STAND") as mock_input:
             blackjack_play = self.player.hit_or_stand()
             mock_input.assert_called_once()
-            self.assertTupleEqual(blackjack_play, (self.player.hands[0], "STAND"))
+            self.assertTupleEqual(blackjack_play, (self.player.hands, "STAND"))
 #
 #
 # class TestCard(unittest.TestCase):
