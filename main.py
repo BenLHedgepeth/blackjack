@@ -6,7 +6,7 @@ from utils import cards
 class BlackjackTable:
 
     def __init__(self):
-        self.cards = cards()
+        self.card_stack = cards()
         self.dealer = Dealer()
         self.players = [self.dealer]
         self.i = 0
@@ -27,15 +27,16 @@ class BlackjackTable:
 
 def main():
     blackjack_table = BlackjackTable()
+    player = Player()
     while True:
         for i in range(2):
             for player in blackjack_table:
                 if i == 1:
                     cards = []
-                dealt_card = blackjack_table.dealer.deal(self.cards)
+                dealt_card = blackjack_table.dealer.deal(self.card_stack)
                 cards.append(card)
                 if i == 2:
-                    hand = Hand(cards)
-                    player.hands.append(hand)
-
-    player_hand_status = person.check_hand(hand)
+                    player.hands.append(Hand(cards))
+    cards, position = player.check_hand()
+    if position == "HIT":
+        card = self.dealer.deal()
