@@ -5,21 +5,9 @@ class Dealer:
         self.chips = 50000
         self.name = "Dealer"
 
-    def shuffle(self):
-        pass
-
-
-    def deal(self, cards, player_cards=[]):
-        if not player_cards:
-            player_cards = [cards.pop(0) for _ in range(2)]
-            player_cards, dealer_cards = cards[0: len(dealt_cards) + 1: 2], cards[1: len(dealt_cards) + 1: 2]
-            return player_cards, dealer_cards
-        elif player_cards and double:
-            new_cards = [cards.pop(0) for _ in range(2)]
-            return zip(player_cards, new_cards)
-        elif player_cards and not double:
-            new_card = cards.pop()
-            # return player_cards.extend(new_card)
+    def deal(self, cards):
+        card = cards.pop(0)
+        return card
 
 
 class Player:
@@ -30,39 +18,58 @@ class Player:
         self.name = 'Player'
 
     def bet(self):
+        if not self.chips:
+            raise ValueError("You have no more chips...Goodbye!")
+        while True:
+            try:
+                bet_placed = abs(int(input("Please place your bet: ")))
+                if not bet_placed:
+                    print("Cannot accept the bet placed!")
+            except ValueError:
+                print("Cannot accept the bet placed!")
+            break
+        self.chips -= bet_placed
+        return bet_placed
+
+    def check_initial_hand(self, dealer):
+        cards = self.hands[0].cards
+
+        while True:
+            position = input("Which play would you like to perform? ").upper()
+            if position == "SPLIT":
+                try:
+                    hands, pos = self.split_hand()
+                except ValueError:
+                    print("""
+                        The cards dealt to you don't have the same pip value.
+                        You can only 'HIT', 'STAND', or 'DOUBLE DOWN'.
+                    """)
+                else:
+                    return hands, pos
+            elif position == "DOUBLE DOWN":
+                pass
+
+        # positon = self.hit_or_stand()
+        # return position
+
+    def split_hand(self):
+        import pdb; pdb.set_trace()
+        cards = self.hands[0].cards
         try:
-            bet_placed = int(input("Please place your bet: "))
-            if not bet_placed:
-                raise ValueError("Cannot accept the bet placed!")
+            hand1, hand2 = [[Hand([card]), ] for card in cards if cards[0] == cards[1]]
         except ValueError:
             raise
-        else:
-            return bet_placed
-
-    def check_hand(self):
-        cards = self.hands[0].cards
-        if len(self.hands) == 1 and cards[0] == cards[1]:
-            while True:
-                split_cards = input("Do you want to split your cards? ").upper()
-                if not split_cards or split_cards not in ["Y", "N"]:
-                    print("Cannot accept card play...")
-                    continue
-                else:
-                    break
-            if split_cards == "Y":
-                return [[card, ] for card in cards], "split"
-        positon = self.hit_or_stand()
-        return position
+        return ([hand1, hand2], "SPLIT")
 
     def hit_or_stand(self):
-        if self.hands[0].value < 21:
+        if len(self.hands) == 1 and self.hands[0].value < 21:
             while True:
                 position = input("Would you like to hit or stand")
                 if not position or position not in ["STAND", "HIT"]:
                     print("Cannot accept blackjack play... ")
                     continue
                 else:
-                    return self.hands[0], position
+                    return self.hands, position
 
 
 
@@ -88,6 +95,9 @@ class Hand:
     def __init__(self, cards):
         self.cards = cards
         self.value = sum([card.pip for card in self.cards])
+
+    def __str__(self):
+        return " ".join([str(card) + '/n' for card in self.cards])
 
     def __len__(self):
         return len(self.cards)

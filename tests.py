@@ -9,7 +9,7 @@ class TestPlayer(unittest.TestCase):
     def setUp(self):
         self.player = Player()
         self.player.hands = [Hand(
-            [Card(8, 'Clubs'), Card(8, 'Hearts')]
+            [Card(8, 'Clubs'), Card(9, 'Hearts')]
         )]
 
     def test_player_bet_no_chips(self):
@@ -19,10 +19,10 @@ class TestPlayer(unittest.TestCase):
                 mock_input.assert_called_once()
 
 
-    def test_player_check_cards_split(self):
-        with patch("builtins.input", return_value="Y") as mock_input:
-            blackjack_play = self.player.check_hand()
-            mock_input.assert_called_once()
+    def test_player_split_hand_unequal_pips(self):
+        with self.assertRaises(IndexError):
+            self.player.split_hand()
+
             self.assertTupleEqual(blackjack_play, (
                 [[Card(8, 'Clubs'), ], [Card(8, 'Hearts'), ]], "split")
             )
