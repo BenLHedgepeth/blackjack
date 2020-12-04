@@ -1,0 +1,3 @@
+
+class LowChipsException(BaseException):
+    pass

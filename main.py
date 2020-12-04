@@ -35,7 +35,7 @@ def main():
     while True:
         shuffle(blackjack_table.card_stack)
         try:
-            wagered_bet = player.bet()
+            player.bet()
         except ValueError as e:
             print(e)
         for i in range(2):
@@ -50,15 +50,12 @@ def main():
                     player.hand = Hand(cards)
         break
     logging.info("Hands have been dealt to both the Player and the Dealer")
-    hands, position = player.check_initial_hand()
-    if position == "SPLIT":
-        logging.info("""
-            The Player has decided to split the original hand
-            into two separate hands
-        """)
-        player.chips -= placed_bet
-        placed_bet += placed_bet
+    hands, position = player.check_hand()
+    while position != "STAND":
+        if position == "DOUBLE_DOWN":
+            pass
         for _ in range(2):
             for hand in hands:
                 dealt_card = self.dealer.deal(self.card_stack)
                 hand.cards.append(dealt_card)
+        hands_position = player.check_hand()
