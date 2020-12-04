@@ -53,9 +53,12 @@ def main():
     hands, position = player.check_hand()
     while position != "STAND":
         if position == "DOUBLE_DOWN":
-            pass
-        for _ in range(2):
+            player.bet()
+            dealt_card = self.dealer.deal()
+            player.hands[0].cards.append(dealt_card)
+            break
+        elif position == "SPLIT":
             for hand in hands:
                 dealt_card = self.dealer.deal(self.card_stack)
                 hand.cards.append(dealt_card)
-        hands_position = player.check_hand()
+            hands, position = player.check_hand()
