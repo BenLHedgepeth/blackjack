@@ -6,10 +6,17 @@ class Dealer:
     def __init__(self, chips=50000):
         self.chips = 50000
         self.name = "Dealer"
+        self.hands = []
 
     def deal(self, cards):
         card = cards.pop(0)
         return card
+
+    def __str__(self):
+        return f"{self.name}"
+
+    def __repr__(self):
+        return
 
 
 class Player:
@@ -19,6 +26,9 @@ class Player:
         self.bets_made = 0
         self.hands = []
         self.name = 'Player'
+
+    def __str__(self):
+        return f"{self.name}"
 
     def bet(self):
         existing_bet = getattr(self, 'bets_made')
@@ -35,8 +45,10 @@ class Player:
                     bet_placed = abs(int(input("Please place your bet: ")))
                     if not bet_placed:
                         print("Cannot accept the bet placed!")
+                        continue
                 except ValueError:
                     print("Cannot accept the bet placed!")
+                    continue
                 else:
                     self.chip_stack -= bet_placed
                     self.bets_made += bet_placed
@@ -45,33 +57,48 @@ class Player:
             raise LowChipsException("You have no chips remaining!")
 
     def check_hand(self, dealer):
-        my_cards = self.hands[0].cards
+        hand_values = map(lambda hand: hand.value, self.hands)
+        for i, hand in enumerate(self.hands):
+            print(f"{str(self.hands[i])}\n" + '-' * len(str(self.hands[i])) + "\n" + f"Total hand: {hand.value}")
+
+        if (len(self.hands) == 1 and
+        all(card.pip == 11 for card in self.hands[0].cards) or
+        all(card.pip == 8 for card in self.hands[0].cards)):
+            print("Split the cards...")
+            self.bet()
+            cards, position = self.split_hand()
+            return (cards, position)
 
         while True:
             position = input("Which play would you like to perform? ").upper()
             if position == "SPLIT":
-                try:
-                    self.bet()
-                    hands, pos = self.split_hand()
-                except ValueError:
-                    print("""
-                        The cards dealt to you don't have the same pip value.
-                        You can only 'HIT', 'STAND', or 'DOUBLE DOWN'.
-                    """)
-                except LowChipsException as e:
-                    print(e)
+                if len(self.hands) == 2:
+                    print("Can only split your hand one time!")
                 else:
-                    return hands, pos
+                    try:
+                        self.bet()
+                        hands, position = self.split_hand()
+                    except ValueError:
+                        print("""
+                            The cards dealt to you don't have the same pip value.
+                            You can only 'HIT', 'STAND', or 'DOUBLE DOWN'.
+                        """)
+                    except LowChipsException as e:
+                        print(e)
+                    else:
+                        return (hands, "SPLIT")
             elif position == "DOUBLE DOWN":
                 try:
                     self.bet()
                 except LowChipsException as e:
                     print(e)
                 else:
-                    return (self.hands, "DOUBLE_DOWN")
-
-        # positon = self.hit_or_stand()
-        # return position
+                    hands = self.hands
+                    return (hands, "DOUBLE_DOWN")
+            elif position == "STAND":
+                hands, position = self.stand()
+            else:
+                pass
 
     def split_hand(self):
         cards = self.hands[0].cards
@@ -83,8 +110,25 @@ class Player:
         self.hands = hands
         return (self.hands, "SPLIT")
 
-    def hit_or_stand(self):
-        pass
+    # def stand(self):
+    #
+    #     ace_exists = list(filter(lambda hand: any(hasattr(card, 'face_card') and card.face_card == 'Ace' for card in hand.cards), self.hands))
+    #
+    #     if ace_exists:
+    #             try:
+    #                 ace_value = abs(int(input("Do you want your 'Ace(s)' to be worth 1 or 11 pips")))
+    #             except ValueError:
+    #                 print("Invalid pip value for your 'Ace(s)'")
+    #             else:
+    #                 for hand in self.hands:
+    #                     for card in hand.cards:
+    #                         if hasattr(card, 'face_card') and card.face_card == 'Ace':
+    #                             card.pip = ace_value
+    #                 hands = self.hands
+    #     return (hands, "STAND")
+
+
+
 
 
 
@@ -112,10 +156,10 @@ class Hand:
         self.value = sum([card.pip for card in self.cards])
 
     def __str__(self):
-        return " ".join([str(card) for card in self.cards])
+        return "".join([str(card) + "\n" for card in self.cards])
 
     def __repr__(self):
-        return " ".join([str(card) + '/n' for card in self.cards])
+        return "".join([f"{card}, " if i == 0 else f"{card}" for i, card in enumerate(self.cards)])
 
     def __len__(self):
         return len(self.cards)
