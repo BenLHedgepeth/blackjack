@@ -146,6 +146,8 @@ class Player:
         cards = hand.cards
         if len(self.hands) > 1:
             raise ValueError("Cannot split hands past your initial hand.")
+        elif len(cards) > 3:
+            raise ValueError("Cannot split a hand that you have doubled down on.")
         elif cards[0] != cards[1]:
             raise HandSplitError(
                 "Cannot split any cards where their pip values aren't equal."
@@ -182,6 +184,7 @@ class Player:
         print(card_strings)
 
         while True:
+            # import pdb; pdb.set_trace()
             play = input("How do you want to play your hand? ").upper()
             if play not in ['DOUBLE DOWN', "SPLIT", "HIT", "STAND"]:
                 print("That play is not possible. Try another play.")
@@ -219,8 +222,10 @@ class Player:
 
     def double_down(self, hand):
         if len(hand.cards) >= 3:
-            raise ValueError("You cannot double down with your present hand")
-        return [hand, ], "DOUBLE DOWN"
+            raise ValueError(
+                "You can only double down with two cards in a hand."
+            )
+        return "DOUBLE DOWN"
 
     def hit(self, hand):
         if hand.soft:
@@ -236,7 +241,7 @@ class Player:
             reduced_hand = self.hands[x].value - (10 * (total_aces - 1))
             self.hands[x].value = reduced_hand
             if self.hands[x].value > 21:
-                return self.hands[x], "BUST"
+                return "BUST"
         if hand.value > 21:
             return "BUST"
         return "HIT"

@@ -34,25 +34,25 @@ def main():
             print(e)
             continue
         else:
-            dealer_hand, player_hand = blackjack_table.dealer.deal_hands(
+            blackjack_table.dealer.deal_hands(
                 blackjack_table.card_stack,
                 player
-            )
-            logging.info(
-                "Hands have been dealt to both the Player and the Dealer."
             )
         player_hands = player.hands.copy()
         i = 0
         while i < len(player.hands):
             '''See Note (1).'''
-            position = player.check_hand(blackjack_table.dealer.hands[0], player.hands[i])
+            position = player.check_hand(
+                blackjack_table.dealer.hands[0], player.hands[i]
+            )
+            # import pdb; pdb.set_trace()
             while position != "BUST":
                 if position == "SPLIT":
                     for i, hand in enumerate(player.hands):
-                        dealt_card = blackjack_table.deal_card(
+                        dealt_card = blackjack_table.dealer.deal_card(
                             blackjack_table.card_stack
                         )
-                        player.hands[i].cards.append(deal_card)
+                        player.hands[i].cards.append(dealt_card)
                         i += 1
                     i = 0
                     break
@@ -61,19 +61,26 @@ def main():
                         blackjack_table.card_stack
                     )
                     player.hands[i].cards.append(dealt_card)
-                    position = player.check_hand(blackjack_table.dealer.hands[0], player.hands[i])
-                    continue
                     if position == "DOUBLE DOWN":
                         i += 1
                         break
+                    position = player.check_hand(
+                        blackjack_table.dealer.hands[0], player.hands[i]
+                    )
+                    continue
                 elif position == "STAND":
+                    import pdb; pdb.set_trace()
                     i += 1
                     break
-            del player_hands[i]
-            i += 1
-            continue
+            if position != "BUST":
+                pass
+            else:
+                del player_hands[i]
+                i += 1
         if not player_hands:
             print("HERE")
+        import pdb; pdb.set_trace()
+        print("PLAYER HANDS EXIST")
     # if all(hand.value > 21 for hand in final_hands):
     #     print(f"""
     #         Dealer wins the round.
@@ -88,14 +95,6 @@ def main():
     #     player._bet = 0
     # print("You win")
 
-'''(1): The initial hand was being passed to player.check_hand() on
-two different lines in the source code when implementing a for loop.
-If a player received a hand that could not be split, the second call
-to the initial hand would occur when evaluating to hit, stand, or double down.
-
-If the player is unable to split their cards, player.check_hand() was being
-called on the same hand twice
-'''
 
 if __name__ == "__main__":
     main()
