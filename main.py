@@ -7,7 +7,7 @@ from classes import Dealer, Player, Hand
 from utils import cards, collect_chips
 
 from exceptions import BettingError
-logging.basicConfig(level=logging.INFO)
+
 
 class BlackjackTable:
 
@@ -34,6 +34,7 @@ def main():
             print(e)
             continue
         else:
+            # import pdb; pdb.set_trace()
             blackjack_table.dealer.deal_hands(
                 blackjack_table.card_stack,
                 player
@@ -41,14 +42,12 @@ def main():
         player_hands = player.hands.copy()
         i = 0
         while i < len(player.hands):
-            '''See Note (1).'''
             position = player.check_hand(
                 blackjack_table.dealer.hands[0], player.hands[i]
             )
-            # import pdb; pdb.set_trace()
             while position != "BUST":
                 if position == "SPLIT":
-                    for i, hand in enumerate(player.hands):
+                    for i, hand in enumerate(player_hands):
                         dealt_card = blackjack_table.dealer.deal_card(
                             blackjack_table.card_stack
                         )
@@ -69,31 +68,49 @@ def main():
                     )
                     continue
                 elif position == "STAND":
-                    import pdb; pdb.set_trace()
                     i += 1
                     break
             if position != "BUST":
                 pass
             else:
-                del player_hands[i]
+                del player.hands[i]
                 i += 1
-        if not player_hands:
-            print("HERE")
-        import pdb; pdb.set_trace()
-        print("PLAYER HANDS EXIST")
-    # if all(hand.value > 21 for hand in final_hands):
-    #     print(f"""
-    #         Dealer wins the round.
-    #         You lost {player._bet} chips.
-    #     """)
-    #     all_dealt_hands = blackjack_table.dealer.hands + final_hands
-    #     for hand in all_dealt_hands:
-    #
-    #         for card in hand.cards:
-    #
-    #     blackjack_table.dealer.chips += player._bet
-    #     player._bet = 0
-    # print("You win")
+        # import pdb; pdb.set_trace()
+        if not player.hands:
+            print(f"""
+                Dealer wins the round.
+                You lost {player._bet} chips.
+            """)
+            player._bet = 0
+            continue
+        else:
+            # import pdb; pdb.set_trace()
+            dealer_hand = blackjack_table.dealer.hands[0]
+            while dealer_hand.value < 17:
+                dealer_hand = blackjack_table.dealer.hit(
+                    blackjack_table.card_stack
+                )
+            if dealer_hand.value > 21:
+                print("You win")
+                player.chips += (player._bet * 2)
+                player._bet = 0
+                play_again = input("Do you want to play another round? ")
+                if not play_again:
+                    pass
+            else:
+                if all(h.value == dealer_hand.value for h in player.hands):
+                    self.chips += player._bet
+                else:
+                    wins = len(list(filter(
+                        lambda h: h > dealer_hand, player.hands
+                    )))
+                    if len(wins) == 1 and len(player.hands) == 2:
+                        self.chips += ((player._bet / 2) * 2)
+                    else:
+                        self.chips += (player._bet * 2)
+                player._bet = 0
+
+        all_dealt_hands = blackjack_table.dealer.hands + player_hands
 
 
 if __name__ == "__main__":

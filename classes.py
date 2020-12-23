@@ -1,6 +1,22 @@
 
 from exceptions import BettingError, HandSplitError
 
+def print_hand(dealer_hand, player_hand, hide=False):
+        # import pdb; pdb.set_trace()
+        str_hands = []
+        for hand in [player_hand, dealer_hand]:
+                max_str_length = len(str(hand))
+                bound = f"{'*' * max_str_length}"
+                if hand is player_hand:
+                    s = f"Player Hand\n{'=' * max_str_length}\n".center(len(bound))
+                else:
+                    s = f"Dealer Hand\n{'=' * max_str_length}\n".center(len(bound))
+                s += '\n'.join(str(hand).split(","))
+                string = f"\n{bound}" + f"\n{s}\n"
+                str_hands.append(string)
+
+        return "".join(str_hands)
+
 
 class Card:
     def __init__(self, pip, suit, *args, **kwargs):
@@ -30,11 +46,12 @@ class Card:
 class Hand:
     def __init__(self, cards):
         self.cards = cards
+        self.double_down = False
         self._value = sum(card.pip for card in cards)
 
     def __str__(self):
         return "".join(
-            [f"{str(card)}, " if i == 0 else f"{str(card)}"
+            [f"{str(card)}, ".strip() if i != len(self.cards) - 1 else f"{str(card)}"
             for i, card in enumerate(self.cards)]
         )
 
@@ -63,6 +80,11 @@ class Hand:
 
     @property
     def value(self):
+        aces = len(list(filter(
+            lambda c: c.pip == 11, self.cards
+        )))
+        if self.soft and aces > 1:
+            return self._value
         return sum(card.pip for card in self.cards)
 
     @value.setter
@@ -80,8 +102,8 @@ class Hand:
 
 class Dealer:
     def __init__(self):
-        self.name = "Dealer"
         self.hands = []
+        self.name = "Dealer"
 
     def __str__(self):
         return self.name
@@ -102,12 +124,40 @@ class Dealer:
         card = cards.pop(0)
         return card
 
+    def hit(self, cards):
+        if self.hands[0].soft:
+            total_aces = len(
+                list(
+                    filter(lambda c: hasattr(c, 'face_card') and
+                    c.face_card == "Ace", self.hands[0].cards)
+                )
+            )
+            if self.hands[0].value > 21:
+                reduced_hand = self.hands[0].value - (10 * len(total_aces))
+                self.hands[0].value = reduced_hand
+                if self.hands[0].value > 21:
+                    return "BUST"
+                elif self.hands[0].value == 21:
+                    return "STAND"
+                return "HIT"
+            elif self.hands[0].value >= 17 and self.hands[0].value <= 21:
+                return "STAND"
+            dealt_card = self.deal_card(cards)
+            self.hands[0].cards.append(dealt_card)
+            return self.hands[0]
+        if self.hands[0].value > 21:
+            return "BUST"
+        elif self.hands[0].value >= 17 and self.hands[0].value <= 21:
+            return "STAND"
+        dealt_card = self.deal_card(cards)
+        self.hands[0].cards.append(dealt_card)
+        return self.hands[0]
 
 class Player:
 
     def __init__(self):
-        self.name = "Player"
         self.hands = []
+        self.name = "Player"
         self.chips = 0
         self._bet = 0
 
@@ -115,7 +165,6 @@ class Player:
         return self.name
 
     def bet(self):
-
         if not self.chips:
             raise BettingError("You have no chips remaining...")
         if self._bet:
@@ -138,6 +187,11 @@ class Player:
                         print("Cannot accept the subject bet. Try again.")
                     else:
                         self.chips -= bet_placed
+                        if self.chips < 0:
+                            self.chips += bet_placed
+                            raise BettingError(
+                                "Your bet cannot be fulfilled due to inadequate chips."
+                            )
                         self._bet += bet_placed
                         break
 
@@ -153,38 +207,45 @@ class Player:
                 "Cannot split any cards where their pip values aren't equal."
             )
         hands = [Hand([card, ]) for card in cards]
-        self.hands = hands
-        return self.hands
+        return hands
+
+    def hit(self, hand):
+        if hand.soft:
+            x, hand = list(filter(
+                lambda h: h[1] == hand and h[1].soft, enumerate(self.hands)
+            ))[0]
+            total_aces = len(
+                list(
+                    filter(lambda c: hasattr(c, 'face_card') and
+                    c.face_card == "Ace", self.hands[x].cards)
+                )
+            )
+            reduced_hand = self.hands[x].value - (10 * (total_aces - 1))
+            self.hands[x].value = reduced_hand
+            if self.hands[x].value > 21:
+                return "BUST"
+        if hand.value > 21:
+            return "BUST"
+        return "HIT"
 
     def check_hand(self, dealer_hand, player_hand):
+        if player_hand.value > 21:
+            return "BUST"
 
-        print(f"""
-            Chips: {self.chips} - Bet: {self._bet} chips - Hand Score: {player_hand.value}\n
-        """)
-        str_hand1 = list(map(lambda x: len(str(x)), player_hand.cards))
-        str_hand2 = list(map(lambda x: len(str(x)), dealer_hand.cards))
-        max_str_length = max(str_hand1 + str_hand2) + 5
+        status_string = f"Chips: {self.chips} - Bet: {self._bet} chips"
+        status_string += f"- Hand Score: {player_hand.value}\n\n"
+        print(status_string + print_hand(dealer_hand, player_hand))
 
-        card_strings = []
-        for hand in (player_hand, dealer_hand):
-            if hand is player_hand:
-                string = f"\t\t\t{('-' * max_str_length)}\n\t\t\tPlayer\n\t\t\t{'=' *  max_str_length}"
-            else:
-                string = f"\t\t\t{('-' * max_str_length)}\n\t\t\tDealer\n\t\t\t{'=' *  max_str_length}"
-            for i, card in enumerate(hand.cards):
-                string += f"\n\t\t\t"
-                if i == 1 and hand is dealer_hand:
-                    string += f"\n\t\t\t{'Down card'.center(max_str_length)}"
-                else:
-                    string += f"\n\t\t\t{str(card).center(max_str_length)}"
-            string += f"\n\t\t\t{'-' * max_str_length}\n"
-            card_strings.append(string)
-
-        card_strings = ''.join(card_strings)
-        print(card_strings)
+        # for hand in player_hand, dealer_hand:
+        #     if hand is dealer_hand:
+        #         show_hand = print_hand(hand, hide=True)
+        #         status_string += show_hand
+        #     else:
+        #         show_hand = print_hand(hand)
+        #         status_string += show_hand
+        # print(status_string)
 
         while True:
-            # import pdb; pdb.set_trace()
             play = input("How do you want to play your hand? ").upper()
             if play not in ['DOUBLE DOWN', "SPLIT", "HIT", "STAND"]:
                 print("That play is not possible. Try another play.")
@@ -200,7 +261,7 @@ class Player:
                         try:
                             hands = self.split_hand(player_hand)
                             self.hands = hands
-                            return self.hands, "SPLIT"
+                            return "SPLIT"
                         except HandSplitError as e:
                             print(e)
                             self._bet /= 2
@@ -208,7 +269,7 @@ class Player:
                             continue
                     elif play == "DOUBLE DOWN":
                         try:
-                            hands = self.double_down(player_hand)
+                            self.double_down(player_hand)
                         except ValueError as e:
                             print(e)
                             self._bet /= 2
@@ -225,23 +286,5 @@ class Player:
             raise ValueError(
                 "You can only double down with two cards in a hand."
             )
+        self.double_down = True
         return "DOUBLE DOWN"
-
-    def hit(self, hand):
-        if hand.soft:
-            x, hand = list(filter(
-                lambda h: h[1].soft, enumerate(self.hands)
-            ))[0]
-            total_aces = len(
-                list(
-                    filter(lambda c: hasattr(c, 'face_card') and
-                    c.face_card == "Ace", self.hands[x].cards)
-                )
-            )
-            reduced_hand = self.hands[x].value - (10 * (total_aces - 1))
-            self.hands[x].value = reduced_hand
-            if self.hands[x].value > 21:
-                return "BUST"
-        if hand.value > 21:
-            return "BUST"
-        return "HIT"
