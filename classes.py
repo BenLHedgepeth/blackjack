@@ -1,21 +1,5 @@
 
-from exceptions import BettingError, HandSplitError
-
-def print_hand(dealer_hand, player_hand, hide=False):
-        # import pdb; pdb.set_trace()
-        str_hands = []
-        for hand in [player_hand, dealer_hand]:
-                max_str_length = len(str(hand))
-                bound = f"{'*' * max_str_length}"
-                if hand is player_hand:
-                    s = f"Player Hand\n{'=' * max_str_length}\n".center(len(bound))
-                else:
-                    s = f"Dealer Hand\n{'=' * max_str_length}\n".center(len(bound))
-                s += '\n'.join(str(hand).split(","))
-                string = f"\n{bound}" + f"\n{s}\n"
-                str_hands.append(string)
-
-        return "".join(str_hands)
+from exceptions import BettingError, HandSplitError, HitError
 
 
 class Card:
@@ -46,7 +30,7 @@ class Card:
 class Hand:
     def __init__(self, cards):
         self.cards = cards
-        self.double_down = False
+        self.double_down_hand = False
         self._value = sum(card.pip for card in cards)
 
     def __str__(self):
@@ -196,7 +180,6 @@ class Player:
                         break
 
     def split_hand(self, hand):
-
         cards = hand.cards
         if len(self.hands) > 1:
             raise ValueError("Cannot split hands past your initial hand.")
@@ -210,6 +193,10 @@ class Player:
         return hands
 
     def hit(self, hand):
+        if len(hand) == 3 and self.double_down_hand:
+            raise HitError(
+                "You cannot hit a hand that you have doubled down on."
+            )
         if hand.soft:
             x, hand = list(filter(
                 lambda h: h[1] == hand and h[1].soft, enumerate(self.hands)
@@ -220,30 +207,29 @@ class Player:
                     c.face_card == "Ace", self.hands[x].cards)
                 )
             )
-            reduced_hand = self.hands[x].value - (10 * (total_aces - 1))
-            self.hands[x].value = reduced_hand
-            if self.hands[x].value > 21:
-                return "BUST"
+            i = 0
+            while self.hands[x].value > 21 and i < total_aces:
+                i += 1
+                reduced_hand = self.hands[x].value - 10
+                self.hands[x].value = reduced_hand
+                continue
+            hand = self.hands[x]
+
         if hand.value > 21:
             return "BUST"
         return "HIT"
 
+
     def check_hand(self, dealer_hand, player_hand):
+
+        print(self.view_hand(dealer_hand, player_hand))
+        if player_hand.value == 22:
+            print("Split Aces")
+            return "SPLIT"
         if player_hand.value > 21:
             return "BUST"
-
-        status_string = f"Chips: {self.chips} - Bet: {self._bet} chips"
-        status_string += f"- Hand Score: {player_hand.value}\n\n"
-        print(status_string + print_hand(dealer_hand, player_hand))
-
-        # for hand in player_hand, dealer_hand:
-        #     if hand is dealer_hand:
-        #         show_hand = print_hand(hand, hide=True)
-        #         status_string += show_hand
-        #     else:
-        #         show_hand = print_hand(hand)
-        #         status_string += show_hand
-        # print(status_string)
+        if player_hand.double_down_hand and player_hand.value <= 21:
+            return "STAND"
 
         while True:
             play = input("How do you want to play your hand? ").upper()
@@ -262,13 +248,14 @@ class Player:
                             hands = self.split_hand(player_hand)
                             self.hands = hands
                             return "SPLIT"
-                        except HandSplitError as e:
+                        except (HandSplitError, ValueError) as e:
                             print(e)
                             self._bet /= 2
                             self.chips += self._bet
                             continue
                     elif play == "DOUBLE DOWN":
                         try:
+                            import pdb; pdb.set_trace()
                             self.double_down(player_hand)
                         except ValueError as e:
                             print(e)
@@ -277,7 +264,11 @@ class Player:
                             continue
                         return play
             elif play == "HIT":
-                position = self.hit(player_hand)
+                try:
+                    position = self.hit(player_hand)
+                except HitError as e:
+                    print(e)
+                    continue
                 return position
             return "STAND"
 
@@ -286,5 +277,23 @@ class Player:
             raise ValueError(
                 "You can only double down with two cards in a hand."
             )
-        self.double_down = True
+        hand.double_down_hand = True
         return "DOUBLE DOWN"
+
+    def view_hand(self, dealer_hand, player_hand, hide=False):
+            # import pdb; pdb.set_trace()
+            status_string = f"Chips: {self.chips} - Bet: {self._bet} chips"
+            status_string += f"- Hand Score: {player_hand.value}\n\n"
+            str_hands = []
+            for hand in [player_hand, dealer_hand]:
+                    max_str_length = len(str(hand))
+                    bound = f"{'*' * max_str_length}"
+                    if hand is player_hand:
+                        s = f"Player Hand\n{'=' * max_str_length}\n".center(len(bound))
+                    else:
+                        s = f"Dealer Hand\n{'=' * max_str_length}\n".center(len(bound))
+                    s += '\n'.join(str(hand).split(","))
+                    string = f"\n{bound}" + f"\n{s}\n"
+                    str_hands.append(string)
+
+            return status_string + "".join(str_hands)

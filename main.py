@@ -39,42 +39,40 @@ def main():
                 blackjack_table.card_stack,
                 player
             )
-        player_hands = player.hands.copy()
-        i = 0
-        while i < len(player.hands):
+        z = 0
+        while z < len(player.hands):
             position = player.check_hand(
-                blackjack_table.dealer.hands[0], player.hands[i]
+                blackjack_table.dealer.hands[0], player.hands[z]
             )
-            while position != "BUST":
-                if position == "SPLIT":
-                    for i, hand in enumerate(player_hands):
-                        dealt_card = blackjack_table.dealer.deal_card(
-                            blackjack_table.card_stack
-                        )
-                        player.hands[i].cards.append(dealt_card)
-                        i += 1
-                    i = 0
-                    break
-                elif position == "HIT" or position == "DOUBLE DOWN":
+            if position == "SPLIT":
+                player_hands = player.hands.copy()
+                for i, hand in enumerate(player_hands):
                     dealt_card = blackjack_table.dealer.deal_card(
                         blackjack_table.card_stack
                     )
                     player.hands[i].cards.append(dealt_card)
-                    if position == "DOUBLE DOWN":
-                        i += 1
-                        break
+                continue
+            while position != "BUST":
+                import pdb; pdb.set_trace()
+                if position == "HIT" or position == "DOUBLE DOWN":
+                    dealt_card = blackjack_table.dealer.deal_card(
+                        blackjack_table.card_stack
+                    )
+                    player.hands[z].cards.append(dealt_card)
                     position = player.check_hand(
-                        blackjack_table.dealer.hands[0], player.hands[i]
+                        blackjack_table.dealer.hands[0], player.hands[z]
                     )
                     continue
                 elif position == "STAND":
-                    i += 1
                     break
             if position != "BUST":
+                z += 1
                 pass
             else:
-                del player.hands[i]
-                i += 1
+                del player.hands[z]
+                z += 1
+                break
+            continue
         # import pdb; pdb.set_trace()
         if not player.hands:
             print(f"""
@@ -84,8 +82,22 @@ def main():
             player._bet = 0
             continue
         else:
-            # import pdb; pdb.set_trace()
+            import pdb; pdb.set_trace()
             dealer_hand = blackjack_table.dealer.hands[0]
+            if all(h.value < dealer_hand.value for h in player.hands):
+                print("You lost!")
+                player._bet = 0
+                while True:
+                    try:
+                        play_again = input("Do you want to play again?\nY(es) or N(o)? ")
+                    except ValueError:
+                        continue
+                    if play_again is None:
+                        continue
+                    break
+                    if play_again == "Y":
+                        pass
+
             while dealer_hand.value < 17:
                 dealer_hand = blackjack_table.dealer.hit(
                     blackjack_table.card_stack
@@ -99,19 +111,25 @@ def main():
                     pass
             else:
                 if all(h.value == dealer_hand.value for h in player.hands):
-                    self.chips += player._bet
+                    player.chips += player._bet
                 else:
                     wins = len(list(filter(
                         lambda h: h > dealer_hand, player.hands
                     )))
-                    if len(wins) == 1 and len(player.hands) == 2:
-                        self.chips += ((player._bet / 2) * 2)
+                    if wins == 1 and len(player.hands) == 2:
+                        player.chips += ((player._bet / 2) * 2)
+                    elif wins:
+                        player.chips += (player._bet * 2)
                     else:
-                        self.chips += (player._bet * 2)
+                        print(f"""
+                            Dealer wins the round.
+                            You lost {player._bet} chips.
+                        """)
+                        player._bet = 0
+                        continue
                 player._bet = 0
 
         all_dealt_hands = blackjack_table.dealer.hands + player_hands
-
 
 if __name__ == "__main__":
     main()

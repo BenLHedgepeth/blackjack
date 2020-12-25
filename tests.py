@@ -217,12 +217,13 @@ class TestPlayer(unittest.TestCase):
                 Card(11, "Diamonds", face_card="Ace"),
                 Card(11, "Hearts", face_card="Ace"),
                 Card(11, "Clubs", face_card="Ace"),
-                Card(10, "Hearts", face_card="Queen")
+                Card(10, "Hearts", face_card="Queen"),
+                Card(9, "Clubs")
             ])]
 
         pos = self.player.hit(self.player.hands[0])
         self.assertTrue(pos == "BUST")
-        self.assertEqual(self.player.hands[0].value, 24)
+        self.assertEqual(self.player.hands[0].value, 23)
 
     def test_player_hit_hard_hand(self):
         '''Verify that a player\'s hard hand busts when
