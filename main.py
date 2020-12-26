@@ -1,7 +1,7 @@
 
 from random import shuffle
 import sys
-import itertools
+import functools
 
 from classes import Dealer, Player, Hand
 from utils import cards, collect_chips
@@ -31,7 +31,9 @@ def main():
             print(e)
             continue
         except BettingError as e:
-            print(e)
+            if not player.chips:
+                print(e)
+                sys.exit()
             continue
         else:
             # import pdb; pdb.set_trace()
@@ -119,10 +121,16 @@ def main():
                     continue
                 break
             if play_again == "Y":
+                import pdb; pdb.set_trace()
                 player._bet = 0
-                # all_dealt_cards = (
-                #     blackjack_table.dealer.hands[0] +
-                # )
+                dealer_cards = dealer_hand.cards
+                if len(player.hands) == 2:
+                    player_cards = player.hands[0].cards + player.hands[1].cards
+                else:
+                    player_cards = player.hands[0].cards
+                all_dealt_cards = player_cards + dealer_cards
+                player.hands = []
+                blackjack_table.card_stack.extend(all_dealt_cards)
             else:
                 sys.exit()
 

@@ -150,7 +150,7 @@ class Player:
 
     def bet(self):
         if not self.chips:
-            raise BettingError("You have no chips remaining...")
+            raise BettingError("You have no chips remaining...Goodbye.")
         if self._bet:
             self.chips -= self._bet
             if (self.chips < 0):
