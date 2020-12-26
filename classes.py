@@ -193,7 +193,8 @@ class Player:
         return hands
 
     def hit(self, hand):
-        if len(hand) == 3 and self.double_down_hand:
+        # import pdb; pdb.set_trace()
+        if len(hand) == 3 and hand.double_down_hand:
             raise HitError(
                 "You cannot hit a hand that you have doubled down on."
             )
@@ -201,12 +202,10 @@ class Player:
             x, hand = list(filter(
                 lambda h: h[1] == hand and h[1].soft, enumerate(self.hands)
             ))[0]
-            total_aces = len(
-                list(
-                    filter(lambda c: hasattr(c, 'face_card') and
-                    c.face_card == "Ace", self.hands[x].cards)
-                )
-            )
+            total_aces = len(list(filter(
+                lambda c: hasattr(c, 'face_card') and
+                        c.face_card == "Ace", self.hands[x].cards
+            )))
             i = 0
             while self.hands[x].value > 21 and i < total_aces:
                 i += 1

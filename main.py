@@ -1,6 +1,6 @@
 
 from random import shuffle
-import logging
+import sys
 import itertools
 
 from classes import Dealer, Player, Hand
@@ -53,7 +53,7 @@ def main():
                     player.hands[i].cards.append(dealt_card)
                 continue
             while position != "BUST":
-                import pdb; pdb.set_trace()
+                # import pdb; pdb.set_trace()
                 if position == "HIT" or position == "DOUBLE DOWN":
                     dealt_card = blackjack_table.dealer.deal_card(
                         blackjack_table.card_stack
@@ -77,59 +77,56 @@ def main():
         if not player.hands:
             print(f"""
                 Dealer wins the round.
+                Player has no winning hands to continue.
                 You lost {player._bet} chips.
             """)
-            player._bet = 0
-            continue
         else:
-            import pdb; pdb.set_trace()
+            # import pdb; pdb.set_trace()
             dealer_hand = blackjack_table.dealer.hands[0]
-            if all(h.value < dealer_hand.value for h in player.hands):
-                print("You lost!")
-                player._bet = 0
-                while True:
-                    try:
-                        play_again = input("Do you want to play again?\nY(es) or N(o)? ")
-                    except ValueError:
-                        continue
-                    if play_again is None:
-                        continue
-                    break
-                    if play_again == "Y":
-                        pass
-
             while dealer_hand.value < 17:
                 dealer_hand = blackjack_table.dealer.hit(
                     blackjack_table.card_stack
                 )
-            if dealer_hand.value > 21:
-                print("You win")
-                player.chips += (player._bet * 2)
-                player._bet = 0
-                play_again = input("Do you want to play another round? ")
-                if not play_again:
-                    pass
-            else:
-                if all(h.value == dealer_hand.value for h in player.hands):
-                    player.chips += player._bet
+            wins = 0
+            for hand in player.hands:
+                print(player.view_hand(
+                    dealer_hand,
+                    hand
+                ))
+                s = ''
+                if dealer_hand.value > 21:
+                    s +="Dealer hand is greater than 21...BUST."
+                    s += "\nPlayer wins!"
+                    wins += 1
+                elif dealer_hand == hand:
+                    s += "Hands have the same pip value...PUSH."
+                    s += "\nNeither the player or dealer wins!"
+                elif dealer_hand > hand:
+                    s += "Dealer hand beats player hand...Dealer wins!"
                 else:
-                    wins = len(list(filter(
-                        lambda h: h > dealer_hand, player.hands
-                    )))
-                    if wins == 1 and len(player.hands) == 2:
-                        player.chips += ((player._bet / 2) * 2)
-                    elif wins:
-                        player.chips += (player._bet * 2)
-                    else:
-                        print(f"""
-                            Dealer wins the round.
-                            You lost {player._bet} chips.
-                        """)
-                        player._bet = 0
-                        continue
+                    s += "Player hand beats dealer hand...Player wins!"
+                    wins += 1
+                print(s)
+            if wins == 1 and len(player.hands) == 2:
+                player.chips += ((player._bet / 2) * 2)
+            elif wins:
+                player.chips += (player._bet * 2)
+            else:
+                print(f"Dealer wins the round.\nYou lost {player._bet} chips.")
+            while True:
+                play_again = input("Do you want to play again?\nY(es) or N(o)? ")
+                if play_again not in ['Y', 'N']:
+                    continue
+                break
+            if play_again == "Y":
                 player._bet = 0
+                # all_dealt_cards = (
+                #     blackjack_table.dealer.hands[0] +
+                # )
+            else:
+                sys.exit()
 
-        all_dealt_hands = blackjack_table.dealer.hands + player_hands
+
 
 if __name__ == "__main__":
     main()
